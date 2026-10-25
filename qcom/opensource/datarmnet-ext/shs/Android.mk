@@ -8,6 +8,9 @@ RMNET_SHS_DLKM_PLATFORMS_LIST += volcano
 ifeq ($(call is-board-platform-in-list, $(RMNET_SHS_DLKM_PLATFORMS_LIST)),true)
 #Make file to create RMNET_SHS DLKM
 LOCAL_PATH := $(call my-dir)
+# The techpacks may sit outside vendor/qcom/opensource (linked there), and the build
+# names DLKM objects by the real path, so find datarmnet next to this directory.
+DATARMNET_OPENSOURCE_DIR := $(patsubst %/datarmnet-ext/,%,$(dir $(LOCAL_PATH)))
 include $(CLEAR_VARS)
 
 LOCAL_CFLAGS := -Wno-macro-redefined -Wno-unused-function -Wall -Werror
@@ -22,7 +25,7 @@ LOCAL_SRC_FILES   := $(wildcard $(LOCAL_PATH)/**/*) $(wildcard $(LOCAL_PATH)/*)
 
 #path from build top to the core directory
 DATARMNET_CORE_PATH := datarmnet/core
-RMNET_CORE_PATH := vendor/qcom/opensource/$(DATARMNET_CORE_PATH)
+RMNET_CORE_PATH := $(DATARMNET_OPENSOURCE_DIR)/$(DATARMNET_CORE_PATH)
 DLKM_DIR := $(TOP)/device/qcom/common/dlkm
 #absolute path to the build directory. Can't use $(TOP) here since
 #that resolves to ., and we pass this to Kbuild, where . is different

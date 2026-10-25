@@ -9,6 +9,9 @@ RMNET_PERF_DLKM_PLATFORMS_LIST += volcano
 
 ifeq ($(call is-board-platform-in-list, $(RMNET_PERF_DLKM_PLATFORMS_LIST)),true)
 LOCAL_PATH := $(call my-dir)
+# The techpacks may sit outside vendor/qcom/opensource (linked there), and the build
+# names DLKM objects by the real path, so find datarmnet next to this directory.
+DATARMNET_OPENSOURCE_DIR := $(patsubst %/datarmnet-ext/,%,$(dir $(LOCAL_PATH)))
 include $(CLEAR_VARS)
 
 #Enabling BAZEL
@@ -21,7 +24,7 @@ LOCAL_SRC_FILES := $(wildcard $(LOCAL_PATH)/**/*) $(wildcard $(LOCAL_PATH)/*)
 
 #path from build top to the core directory
 DATARMNET_CORE_PATH := datarmnet/core
-RMNET_CORE_PATH := vendor/qcom/opensource/$(DATARMNET_CORE_PATH)
+RMNET_CORE_PATH := $(DATARMNET_OPENSOURCE_DIR)/$(DATARMNET_CORE_PATH)
 DLKM_DIR := $(TOP)/device/qcom/common/dlkm
 #absolute path to the build directory. Can't use $(TOP) here since
 #that resolves to ., and we pass this to Kbuild, where . is different
@@ -36,7 +39,7 @@ KBUILD_OPTIONS_GKI += RMNET_CORE_PATH=$(RMNET_CORE_PATH)/gki
 
 #rmnet shs path
 DATARMNET_SHS_PATH := datarmnet-ext/shs
-RMNET_SHS_PATH := vendor/qcom/opensource/$(DATARMNET_SHS_PATH)
+RMNET_SHS_PATH := $(DATARMNET_OPENSOURCE_DIR)/$(DATARMNET_SHS_PATH)
 RMNET_SHS_INC_DIR := $(abspath $(RMNET_SHS_PATH))
 
 #Must be built after the core rmnet and shs module
