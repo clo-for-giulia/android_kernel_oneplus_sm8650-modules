@@ -13,7 +13,7 @@ LOCAL_PATH := $(call my-dir)
 # Path to DLKM make scripts
 DLKM_DIR := $(TOP)/device/qcom/common/dlkm
 
-LOCAL_MODULE_DDK_BUILD := true
+LOCAL_MODULE_DDK_BUILD := false
 
 LOCAL_MODULE_DDK_SUBTARGET_REGEX := "camera.*"
 ifeq ($(TARGET_BOARD_PLATFORM), volcano)
