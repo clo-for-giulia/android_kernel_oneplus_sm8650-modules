@@ -35,7 +35,6 @@ def define_pineapple(t, v, lt=None):
                 "OPLUS_FEATURE_DISPLAY_HIGH_PRECISION",
                 "OPLUS_FEATURE_DISPLAY_TEMP_COMPENSATION",
                 "OPLUS_FEATURE_DISPLAY_ONSCREENFINGERPRINT",
-                "OPLUS_TRACKPOINT_REPORT",
 #endif /* OPLUS_FEATURE_DISPLAY */
 #ifdef CONFIG_PXLW_IRIS
             "CONFIG_PXLW_IRIS",
