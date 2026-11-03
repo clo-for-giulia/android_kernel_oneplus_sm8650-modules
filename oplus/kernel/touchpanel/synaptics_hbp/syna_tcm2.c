@@ -2169,6 +2169,15 @@ static int syna_dev_resume(struct device *dev)
  * do actully resume function
  * Do not care the result: Return void type
  */
+static void syna_tcm_single_tap_work(struct work_struct *work)
+{
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct syna_tcm *tcm = container_of(dwork, struct syna_tcm, single_tap_work);
+
+	atomic_set(&tcm->single_tap_pressed, 1);
+	sysfs_notify(&tcm->pdev->dev.kobj, NULL, "single_tap_pressed");
+}
+
 static void syna_speedup_resume(struct work_struct *work)
 {
 	struct syna_tcm *tcm = container_of(work, struct syna_tcm,
@@ -2825,6 +2834,7 @@ static int syna_dev_disconnect(struct syna_tcm *tcm)
 	}
 
 #ifdef STARTUP_REFLASH
+	cancel_delayed_work_sync(&tcm->single_tap_work);
 	cancel_delayed_work_sync(&tcm->reflash_work);
 	flush_workqueue(tcm->reflash_workqueue);
 	destroy_workqueue(tcm->reflash_workqueue);
@@ -2960,6 +2970,7 @@ static int syna_dev_connect(struct syna_tcm *tcm)
 	tcm->reflash_workqueue =
 			create_singlethread_workqueue("syna_reflash");
 	INIT_DELAYED_WORK(&tcm->reflash_work, syna_dev_reflash_startup_work);
+	INIT_DELAYED_WORK(&tcm->single_tap_work, syna_tcm_single_tap_work);
 	/*queue_delayed_work(tcm->reflash_workqueue, &tcm->reflash_work,
 			msecs_to_jiffies(STARTUP_REFLASH_DELAY_TIME_MS));*/
 #endif

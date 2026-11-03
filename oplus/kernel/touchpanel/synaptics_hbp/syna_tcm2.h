@@ -715,6 +715,7 @@ struct syna_tcm {
 	bool enter_force_doze;
 	bool under_water;
 	atomic_t single_tap_pressed;
+	struct delayed_work single_tap_work;
 	atomic_t double_tap_pressed;
 	atomic_t fp_pressed;
 	unsigned short touch_rate;

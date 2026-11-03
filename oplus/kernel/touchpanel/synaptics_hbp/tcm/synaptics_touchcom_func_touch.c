@@ -324,7 +324,7 @@ int syna_tcm_check_double_tap(void)
 		tpend = ktime_get_real_ns();
 		single_num = 0;
 		timeuse = tpend - tpstart;
-		if (timeuse < 500000000) {
+		if (timeuse < 250000000) {
 			return 1;
 		} else {
 			tpstart = ktime_get_real_ns();
@@ -641,16 +641,22 @@ int syna_tcm_parse_touch_report(struct tcm_dev *tcm_dev,
 				sysfs_notify(&tcm->pdev->dev.kobj, NULL, "fp_pressed");
 			}
 			if (touch_data->gesture_id == DTAP_DETECT) {
+				cancel_delayed_work(&tcm->single_tap_work);
 				atomic_set(&tcm->double_tap_pressed, 1);
 				sysfs_notify(&tcm->pdev->dev.kobj, NULL, "double_tap_pressed");
 			}
 			if (touch_data->gesture_id == STAP_DETECT) {
 				if (syna_tcm_check_double_tap()) {
+					cancel_delayed_work(&tcm->single_tap_work);
 					atomic_set(&tcm->double_tap_pressed, 1);
 					sysfs_notify(&tcm->pdev->dev.kobj, NULL, "double_tap_pressed");
 				} else {
-					atomic_set(&tcm->single_tap_pressed, 1);
-					sysfs_notify(&tcm->pdev->dev.kobj, NULL, "single_tap_pressed");
+					/*
+					 * Defer the single tap past the double tap window so a
+					 * second tap can cancel it.
+					 */
+					schedule_delayed_work(&tcm->single_tap_work,
+							      msecs_to_jiffies(250));
 				}
 			}
 			if (retval < 0) {
