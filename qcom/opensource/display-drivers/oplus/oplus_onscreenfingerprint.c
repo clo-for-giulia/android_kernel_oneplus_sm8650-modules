@@ -4357,7 +4357,8 @@ int oplus_ofp_touchpanel_event_notifier_call(struct notifier_block *nb, unsigned
 
 			if (tp_event->touch_state == 1) {
 				OFP_INFO("tp touchdown\n");
-				if (p_oplus_ofp_params->need_to_update_lhbm_pressed_icon_gamma_nt37707) {
+				if (p_oplus_ofp_params->need_to_update_lhbm_pressed_icon_gamma_nt37707
+						|| oplus_ofp_local_hbm_unlocking_acceleration_is_enabled()) {
 					if (oplus_ofp_notify_fp_press(&tp_event->touch_state))
 						OFP_INFO("failed to notify fp down event");
 				}
@@ -4373,7 +4374,8 @@ int oplus_ofp_touchpanel_event_notifier_call(struct notifier_block *nb, unsigned
 				}
 			} else if (tp_event->touch_state == 0) {
 				OFP_INFO("tp touchup\n");
-				if (p_oplus_ofp_params->need_to_update_lhbm_pressed_icon_gamma_nt37707) {
+				if (p_oplus_ofp_params->need_to_update_lhbm_pressed_icon_gamma_nt37707
+						|| oplus_ofp_local_hbm_unlocking_acceleration_is_enabled()) {
 					if (oplus_ofp_notify_fp_press(&tp_event->touch_state))
 						OFP_INFO("failed to notify fp up event");
 				}
