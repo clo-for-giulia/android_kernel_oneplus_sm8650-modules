@@ -2570,7 +2570,7 @@ int oplus_ofp_lhbm_handle(void *dsi_display)
 	 * instead, so UI_READY is emitted before the HAL's waitUiready()
 	 * times out.
 	 */
-	if (p_oplus_ofp_params->fp_press && bl_level) {
+	if (p_oplus_ofp_params->fp_press) {
 		rc = oplus_ofp_set_panel_hbm(c_conn, true);
 		if (rc) {
 			OFP_ERR("failed to set panel hbm on\n");
