@@ -2535,6 +2535,17 @@ int oplus_ofp_lhbm_handle(void *dsi_display)
 		return -EINVAL;
 	}
 
+	/*
+	 * The touch HAL does not always report a finger-up on the screen-on
+	 * path, which leaves fp_press set and keeps LHBM on indefinitely.
+	 * Expire it so the pressed icon and HBM turn off after authentication.
+	 */
+	if (p_oplus_ofp_params->fp_press
+			&& ktime_after(ktime_get(), ktime_add_ms(p_oplus_ofp_params->fp_press_time, 600))) {
+		p_oplus_ofp_params->fp_press = false;
+		OFP_INFO("fp_press timeout, clear\n");
+	}
+
 	if (p_oplus_ofp_params->hbm_mode) {
 		OFP_DEBUG("already in hbm mode %u\n", p_oplus_ofp_params->hbm_mode);
 		return 0;
@@ -5211,6 +5222,7 @@ int oplus_ofp_notify_fp_press(void *buf)
 	if (*fp_press) {
 		/* finger is pressed down */
 		p_oplus_ofp_params->fp_press = true;
+		p_oplus_ofp_params->fp_press_time = ktime_get();
 	} else {
 		p_oplus_ofp_params->fp_press = false;
 	}
@@ -5222,10 +5234,8 @@ int oplus_ofp_notify_fp_press(void *buf)
 		OFP_DEBUG("fp press is true\n");
 
 		if (oplus_ofp_get_aod_state()) {
-			/* Avoid using thread to exit AOD for blind fingerprint decoding in 60hz AOD of video mode */
-			if (oplus_ofp_video_mode_aod_fod_is_enabled()) {
-				oplus_ofp_aod_off_handle(display);
-			}
+			/* Exit AOD synchronously so LHBM can start before waitUiready() times out */
+			oplus_ofp_aod_off_handle(display);
 		} else {
 			oplus_ofp_aod_off_set();
 		}
@@ -5268,16 +5278,21 @@ ssize_t oplus_ofp_notify_fp_press_attr(struct kobject *obj,
 	if (fp_press) {
 		/* finger is pressed down */
 		p_oplus_ofp_params->fp_press = true;
+		p_oplus_ofp_params->fp_press_time = ktime_get();
 	} else {
 		p_oplus_ofp_params->fp_press = false;
 	}
 	OFP_INFO("oplus_ofp_fp_press:%d\n", p_oplus_ofp_params->fp_press);
 	OPLUS_OFP_TRACE_INT("oplus_ofp_fp_press", p_oplus_ofp_params->fp_press);
 
-	if (p_oplus_ofp_params->fp_press && !oplus_ofp_video_mode_aod_fod_is_enabled()) {
-		/* send aod off cmds in doze mode to speed up fingerprint unlocking */
+	if (p_oplus_ofp_params->fp_press) {
+		/* Exit AOD synchronously so LHBM can start before waitUiready() times out */
 		OFP_DEBUG("fp press is true\n");
-		oplus_ofp_aod_off_set();
+		if (oplus_ofp_get_aod_state()) {
+			oplus_ofp_aod_off_handle(display);
+		} else {
+			oplus_ofp_aod_off_set();
+		}
 	}
 
 	/* local hbm unlocking acceleration */
