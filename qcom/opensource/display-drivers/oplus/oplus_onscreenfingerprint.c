@@ -2519,7 +2519,6 @@ int oplus_ofp_lhbm_handle(void *dsi_display)
 {
 	int rc = 0;
 	unsigned int bl_level = 0;
-	uint64_t hbm_enable = 0;
 	struct dsi_display *display = dsi_display;
 	struct sde_connector *c_conn = NULL;
 	struct oplus_ofp_params *p_oplus_ofp_params = oplus_ofp_get_params(oplus_ofp_display_id);
@@ -2562,12 +2561,16 @@ int oplus_ofp_lhbm_handle(void *dsi_display)
 	mutex_lock(&oplus_ofp_lhbm_lock);
 
 	bl_level = display->panel->bl_config.bl_level;
-	hbm_enable = p_oplus_ofp_params->hbm_enable;
 	OFP_DEBUG("bl_level=%u\n", bl_level);
 
-	if (p_oplus_ofp_params->fp_press && bl_level
-			&& (hbm_enable & OPLUS_OFP_PROPERTY_DIM_LAYER
-				|| hbm_enable & OPLUS_OFP_PROPERTY_FINGERPRESS_LAYER)) {
+	/*
+	 * On AOSP the UdfpsControllerOverlay can be client-composed, so the
+	 * OPLUS_FINGERPRINT_MASK HWC never reports the FINGERPRESS_LAYER and
+	 * hbm_enable stays 0.  Key the LHBM pressed icon off finger-down
+	 * instead, so UI_READY is emitted before the HAL's waitUiready()
+	 * times out.
+	 */
+	if (p_oplus_ofp_params->fp_press && bl_level) {
 		rc = oplus_ofp_set_panel_hbm(c_conn, true);
 		if (rc) {
 			OFP_ERR("failed to set panel hbm on\n");
