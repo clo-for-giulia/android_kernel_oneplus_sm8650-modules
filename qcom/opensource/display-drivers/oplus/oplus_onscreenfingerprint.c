@@ -2541,7 +2541,7 @@ int oplus_ofp_lhbm_handle(void *dsi_display)
 	 * Expire it so the pressed icon and HBM turn off after authentication.
 	 */
 	if (p_oplus_ofp_params->fp_press
-			&& ktime_after(ktime_get(), ktime_add_ms(p_oplus_ofp_params->fp_press_time, 600))) {
+			&& ktime_after(ktime_get(), ktime_add_ms(p_oplus_ofp_params->fp_press_time, 200))) {
 		p_oplus_ofp_params->fp_press = false;
 		OFP_INFO("fp_press timeout, clear\n");
 	}
