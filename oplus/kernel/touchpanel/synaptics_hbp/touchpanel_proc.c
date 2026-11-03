@@ -963,6 +963,8 @@ static ssize_t proc_fingerprint_active_write(struct file *file,
 				      const char __user *buffer, size_t count, loff_t *ppos)
 {
 	struct syna_tcm *tcm = PDE_DATA(file_inode(file));
+	struct fp_underscreen_info fp_info;
+	bool report_up = false;
 	int tmp = 0;
 	char buf[4] = {0};
 
@@ -981,9 +983,21 @@ static ssize_t proc_fingerprint_active_write(struct file *file,
 	tcm->fp_active = !!tmp;
 	TPD_INFO("%s: fp_active = %d.\n", __func__, tcm->fp_active);
 
+	if (!tcm->fp_active && tcm->is_fp_down) {
+		tcm->is_fp_down = false;
+		fp_info = tcm->fp_info;
+		fp_info.touch_state = 0;
+		report_up = true;
+	}
+
 	syna_dev_update_lpwg_mode(tcm);
 
 	mutex_unlock(&tcm->mutex);
+
+	if (report_up) {
+		touch_call_notifier_fp(tcm, &fp_info);
+		TPD_INFO("fp_active off, report fingerprint up\n");
+	}
 
 	return count;
 }
