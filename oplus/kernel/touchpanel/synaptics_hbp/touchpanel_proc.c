@@ -987,7 +987,14 @@ static ssize_t proc_fingerprint_active_write(struct file *file,
 		tcm->is_fp_down = false;
 		fp_info = tcm->fp_info;
 		fp_info.touch_state = 0;
-		report_up = true;
+		/*
+		 * Only report the synthetic up while the panel is fully on.
+		 * During blank/suspend the display is already powering down and
+		 * clears LHBM itself; calling into it from here races the
+		 * display power-off path.
+		 */
+		report_up = (tcm->pwr_state == PWR_ON &&
+				tcm->sub_pwr_state == SUB_PWR_RESUME_DONE);
 	}
 
 	syna_dev_update_lpwg_mode(tcm);
