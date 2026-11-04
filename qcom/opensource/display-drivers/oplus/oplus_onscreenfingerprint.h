@@ -105,6 +105,7 @@ struct oplus_ofp_params {
 	bool panel_hbm_status;							/* indicates whether hbm cmds are taking effect in panel module or not */
 	bool fp_press;									/* indicates whether pressed icon layer is ready or not */
 	ktime_t fp_press_time;							/* record fp press timestamp for timeout */
+	bool panel_off;									/* panel is powering down or fully off */
 	unsigned int pressed_icon_status;				/* indicates whether pressed icon has been displayed in panel module or not */
 	unsigned int notifier_chain_value;				/* ui ready notifier chain value */
 	unsigned int lhbm_dbv_alpha_cmd_index;			/* indicates which line the dbv alpha register is in the cmd set */

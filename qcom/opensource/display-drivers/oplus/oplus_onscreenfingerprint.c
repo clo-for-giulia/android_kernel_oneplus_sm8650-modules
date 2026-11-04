@@ -2299,6 +2299,11 @@ static int oplus_ofp_set_panel_hbm(void *sde_connector, bool hbm_en)
 		return -EINVAL;
 	}
 
+	if (p_oplus_ofp_params->panel_off) {
+		OFP_DEBUG("panel is off, skip panel hbm\n");
+		return 0;
+	}
+
 	if (c_conn->connector_type != DRM_MODE_CONNECTOR_DSI) {
 		OFP_DEBUG("not in dsi mode, should not set panel hbm\n");
 		return 0;
@@ -2533,6 +2538,16 @@ int oplus_ofp_lhbm_handle(void *dsi_display)
 	if (!display || !display->panel || !display->drm_conn || !p_oplus_ofp_params) {
 		OFP_ERR("Invalid display params\n");
 		return -EINVAL;
+	}
+
+	/*
+	 * The display is powering down: this path is reached from the touch
+	 * panel blank notifier while the display commit is still in progress.
+	 * Do not send DSI/LHBM commands or take display locks here.
+	 */
+	if (p_oplus_ofp_params->panel_off) {
+		OFP_DEBUG("panel is off, skip lhbm handling\n");
+		return 0;
 	}
 
 	/*
@@ -3708,6 +3723,11 @@ int oplus_ofp_aod_off_handle(void *dsi_display)
 		return -EINVAL;
 	}
 
+	if (p_oplus_ofp_params->panel_off) {
+		OFP_DEBUG("panel is off, skip aod off handling\n");
+		return 0;
+	}
+
 	OPLUS_OFP_TRACE_BEGIN("oplus_ofp_aod_off_handle");
 
 	/* doze disable handle */
@@ -3833,6 +3853,7 @@ int oplus_ofp_power_mode_handle(void *dsi_display, int power_mode)
 	switch (power_mode) {
 	case SDE_MODE_DPMS_LP1:
 	case SDE_MODE_DPMS_LP2:
+		p_oplus_ofp_params->panel_off = false;
 		if (!p_oplus_ofp_params->doze_active) {
 			p_oplus_ofp_params->doze_active = true;
 			OFP_INFO("oplus_ofp_doze_active:%d\n", p_oplus_ofp_params->doze_active);
@@ -3930,6 +3951,7 @@ int oplus_ofp_power_mode_handle(void *dsi_display, int power_mode)
 		break;
 
 	case SDE_MODE_DPMS_ON:
+		p_oplus_ofp_params->panel_off = false;
 		if (p_oplus_ofp_params->doze_active) {
 			p_oplus_ofp_params->doze_active = false;
 			OFP_INFO("oplus_ofp_doze_active:%d\n", p_oplus_ofp_params->doze_active);
@@ -3971,6 +3993,14 @@ int oplus_ofp_power_mode_handle(void *dsi_display, int power_mode)
 			OFP_INFO("oplus_ofp_fp_press:%d\n", p_oplus_ofp_params->fp_press);
 			OPLUS_OFP_TRACE_INT("oplus_ofp_fp_press", p_oplus_ofp_params->fp_press);
 		}
+
+		/*
+		 * The touch panel blank notifier runs after this callback and
+		 * reports a fingerprint up.  Mark the panel off so LHBM/AOD work
+		 * triggered from that notifier does not touch DSI while the
+		 * display is powering down.
+		 */
+		p_oplus_ofp_params->panel_off = true;
 		break;
 
 	default:
