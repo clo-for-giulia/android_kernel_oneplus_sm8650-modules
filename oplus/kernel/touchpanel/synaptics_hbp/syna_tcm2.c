@@ -880,6 +880,7 @@ static void syna_dev_report_input_events(struct syna_tcm *tcm)
 					fp_info.y = touch_data->data_point[2] | (touch_data->data_point[3] << 8);
 					touch_call_notifier_fp(tcm, &fp_info);
 
+					tcm->fp_info = fp_info;
 					tcm->is_fp_down = true;
 					LOGI("screen off fingerprint down(%u %u)\n", fp_info.x, fp_info.y);
 					syna_send_signal(tcm, SIG_FINGER_DOWN);
@@ -892,6 +893,7 @@ static void syna_dev_report_input_events(struct syna_tcm *tcm)
 				memset(&fp_info, 0, sizeof(struct fp_underscreen_info));
 				fp_info.touch_state = 0;
 				touch_call_notifier_fp(tcm, &fp_info);
+				tcm->fp_info = fp_info;
 				tcm->is_fp_down = false;
 				LOGI("screen off fingerprint up\n");
 				syna_send_signal(tcm, SIG_FINGER_UP);

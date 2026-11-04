@@ -965,6 +965,8 @@ static ssize_t proc_fingerprint_active_write(struct file *file,
 	struct syna_tcm *tcm = PDE_DATA(file_inode(file));
 	struct fp_underscreen_info fp_info;
 	bool report_up = false;
+	bool report_down = false;
+	bool was_active;
 	int tmp = 0;
 	char buf[4] = {0};
 
@@ -980,6 +982,7 @@ static ssize_t proc_fingerprint_active_write(struct file *file,
 	}
 
 	mutex_lock(&tcm->mutex);
+	was_active = tcm->fp_active;
 	tcm->fp_active = !!tmp;
 	TPD_INFO("%s: fp_active = %d.\n", __func__, tcm->fp_active);
 
@@ -997,9 +1000,26 @@ static ssize_t proc_fingerprint_active_write(struct file *file,
 				tcm->sub_pwr_state == SUB_PWR_RESUME_DONE);
 	}
 
+	/*
+	 * The screen-off fingerprint down is reported before the fingerprint
+	 * HAL session exists.  Replay the pending down when the HAL enables
+	 * fingerprint_active, so the same press can authenticate instead of
+	 * being lost.
+	 */
+	if (tcm->fp_active && !was_active && tcm->is_fp_down) {
+		fp_info = tcm->fp_info;
+		fp_info.touch_state = 1;
+		report_down = true;
+	}
+
 	syna_dev_update_lpwg_mode(tcm);
 
 	mutex_unlock(&tcm->mutex);
+
+	if (report_down) {
+		touch_call_notifier_fp(tcm, &fp_info);
+		TPD_INFO("fp_active on, report current fingerprint down\n");
+	}
 
 	if (report_up) {
 		touch_call_notifier_fp(tcm, &fp_info);
